@@ -1,13 +1,61 @@
 package ca.flutra.rag
 
+import dev.langchain4j.data.document.Metadata
+import dev.langchain4j.data.document.splitter.DocumentSplitters
+import dev.langchain4j.store.embedding.EmbeddingStoreIngestor
 import kotlinx.coroutines.runBlocking
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 
-// File that records which document paths have already been ingested.
-// On each run we skip files listed here, so re-running never creates duplicates in Qdrant.
 private val MANIFEST_PATH = Paths.get(".ingestion-manifest.txt")
+
+fun main() = runBlocking {
+    println("=== Starting ingestion ===")
+
+    val alreadyIngested = loadManifest()
+    if (alreadyIngested.isNotEmpty()) {
+        println("Skipping ${alreadyIngested.size} already-ingested document(s).")
+    }
+
+    // 1. Load and OCR all new PDFs.
+    val documents = DocumentLoader.load(alreadyIngested)
+    if (documents.isEmpty()) {
+        println("No new documents to ingest.")
+        return@runBlocking
+    }
+    println("Loaded ${documents.size} new document(s).")
+
+    // 2. Convert to LangChain4j Documents so the ingestor can process them.
+    val lc4jDocs = documents.map { doc ->
+        dev.langchain4j.data.document.Document.from(
+            doc.text,
+            Metadata.from(mapOf("source" to doc.source, "type" to doc.type)),
+        )
+    }
+
+    // 3. Split → embed → store, all handled by EmbeddingStoreIngestor.
+    //    DocumentSplitters.recursive splits on paragraph/sentence/word boundaries
+    //    in that order, never cutting mid-sentence.
+    val ingestor = EmbeddingStoreIngestor.builder()
+        .documentSplitter(
+            DocumentSplitters.recursive(
+                Config.CHUNK_SIZE_TOKENS,
+                Config.CHUNK_OVERLAP_TOKENS,
+            )
+        )
+        .embeddingModel(ModelProvider.embeddingModel)   // plain model — no prefix for passages
+        .embeddingStore(EmbeddingStoreProvider.store)
+        .build()
+
+    ingestor.ingest(lc4jDocs)
+    println("Ingested and stored all chunks.")
+
+    // 4. Record newly ingested paths so future runs skip them.
+    appendToManifest(documents.map { it.source })
+
+    println("=== Ingestion complete ===")
+}
 
 private fun loadManifest(): Set<String> {
     if (!Files.exists(MANIFEST_PATH)) return emptySet()
@@ -22,31 +70,4 @@ private fun appendToManifest(sources: List<String>) {
         StandardOpenOption.CREATE,
         StandardOpenOption.APPEND,
     )
-}
-
-fun main() = runBlocking {
-    println("=== Starting ingestion ===")
-
-    val alreadyIngested = loadManifest()
-    if (alreadyIngested.isNotEmpty()) {
-        println("Skipping ${alreadyIngested.size} already-ingested document(s).")
-    }
-
-    val documents = DocumentLoader.load(alreadyIngested)
-
-    if (documents.isEmpty()) {
-        println("No new documents to ingest.")
-        return@runBlocking
-    }
-
-    println("Chunking ${documents.size} new document(s)...")
-    val chunks = Chunker.createChunks(documents)
-    println("Created ${chunks.size} chunks")
-
-    Embedder.embedAndStore(chunks)
-
-    // Record newly ingested paths so future runs skip them.
-    appendToManifest(documents.map { it.source })
-
-    println("=== Ingestion complete ===")
 }

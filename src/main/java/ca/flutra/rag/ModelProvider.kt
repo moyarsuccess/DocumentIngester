@@ -21,7 +21,7 @@ object ModelProvider {
         OllamaEmbeddingModel.builder()
             .baseUrl(Config.OLLAMA_BASE_URL)
             .modelName(Config.EMBEDDING_MODEL_NAME)
-            .timeout(Duration.ofMinutes(2))
+            .timeout(Duration.ofMinutes(5))
             .build()
     }
 }

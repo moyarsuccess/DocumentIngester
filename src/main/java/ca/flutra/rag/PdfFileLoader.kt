@@ -24,7 +24,7 @@ class PdfFileLoader(
                 val pdfRenderer = PDFRenderer(document)
                 (0 until document.numberOfPages)
                     .map { pageIndex ->
-                        pdfRenderer.renderImageWithDPI(pageIndex, 150f)
+                        pdfRenderer.renderImageWithDPI(pageIndex, 300f)
                     }
                     .map { image ->
                         async {

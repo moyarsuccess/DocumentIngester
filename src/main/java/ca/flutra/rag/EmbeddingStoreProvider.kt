@@ -14,7 +14,7 @@ object EmbeddingStoreProvider {
     }
 
     val store by lazy {
-        ensureCollectionExists()
+        ensureCollectionExistsWithCorrectDimensions()
         QdrantEmbeddingStore.builder()
             .host(Config.QDRANT_HOST)
             .port(Config.QDRANT_PORT)
@@ -22,8 +22,33 @@ object EmbeddingStoreProvider {
             .build()
     }
 
-    private fun ensureCollectionExists() {
-        if (qdrantClient.collectionExists(Config.COLLECTION_NAME)) return
+    private fun ensureCollectionExistsWithCorrectDimensions() {
+        if (!qdrantClient.collectionExists(Config.COLLECTION_NAME)) {
+            createCollection()
+            return
+        }
+
+        val info = qdrantClient.getCollectionInfoAsync(Config.COLLECTION_NAME).get()
+        val storedSize = info.config.params.vectorsConfig.params.size
+        
+        if (storedSize == Config.EMBEDDING_DIMENSIONS.toLong()) {
+            println(
+                "Qdrant collection '${Config.COLLECTION_NAME}' exists with " +
+                "$storedSize dimensions — OK."
+            )
+            return
+        }
+
+        println(
+            "WARNING: Qdrant collection '${Config.COLLECTION_NAME}' has vector size " +
+            "$storedSize but Config.EMBEDDING_DIMENSIONS=${Config.EMBEDDING_DIMENSIONS}. " +
+            "Dropping and recreating the collection — all previously stored vectors will be lost."
+        )
+        qdrantClient.deleteCollectionAsync(Config.COLLECTION_NAME).get()
+        createCollection()
+    }
+
+    private fun createCollection() {
         qdrantClient.createCollectionAsync(
             Config.COLLECTION_NAME,
             Collections.VectorParams.newBuilder()

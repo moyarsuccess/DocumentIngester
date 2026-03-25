@@ -3,6 +3,7 @@ package ca.flutra.rag
 import ca.flutra.rag.ocr.GoogleVisionOcrProvider
 import ca.flutra.rag.ocr.OcrProvider
 import ca.flutra.rag.ocr.OllamaOcrProvider
+import ca.flutra.rag.ocr.TesseractOcrProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -15,11 +16,10 @@ import kotlin.io.path.name
 
 object DocumentLoader {
 
-    // Selects the OCR provider based on Config.OCR_PROVIDER.
-    // Swap to "google" in Config to use Google Cloud Vision.
     private val ocrProvider: OcrProvider = when (Config.OCR_PROVIDER) {
-        "google" -> GoogleVisionOcrProvider
-        else -> OllamaOcrProvider
+        Config.OcrProviderType.GOOGLE -> GoogleVisionOcrProvider
+        Config.OcrProviderType.TESSERACT -> TesseractOcrProvider
+        Config.OcrProviderType.OLLAMA -> OllamaOcrProvider
     }
 
     /**
@@ -30,7 +30,6 @@ object DocumentLoader {
         withContext(Dispatchers.IO) {
             val root = Config.knowledgeBasePath
             require(Files.exists(root)) { "Knowledge base path not found: $root" }
-
             Files.walk(root)
                 .filter { !it.isDirectory() && it.extension == "pdf" }
                 .filter { it.toAbsolutePath().toString() !in alreadyIngested }
