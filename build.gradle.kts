@@ -40,15 +40,8 @@ dependencies {
     implementation("org.slf4j:slf4j-simple:2.0.9")
     implementation("com.github.jai-imageio:jai-imageio-jpeg2000:1.4.0")
     implementation("com.github.jai-imageio:jai-imageio-core:1.4.0")
-}
 
-configurations.all {
-    resolutionStrategy.eachDependency {
-        if (requested.group == "org.apache.lucene") {
-            useVersion("9.12.1")
-            because("Prevent Lucene version mismatch between core and sandbox")
-        }
-    }
+    implementation("com.google.cloud:google-cloud-vision:3.30.0")
 }
 
 tasks.test {
@@ -59,4 +52,14 @@ kotlin {
 }
 tasks.withType<JavaExec> {
     jvmArgs("-Dorg.apache.lucene.store.MMapDirectory.enableMemorySegments=false")
+}
+
+// Force all grpc modules to the same version
+configurations.all {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "io.grpc") {
+            useVersion("1.77.0")
+            because("Force consistent gRPC version across all dependencies")
+        }
+    }
 }

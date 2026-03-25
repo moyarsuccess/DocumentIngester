@@ -17,7 +17,7 @@ object EmbeddingStore {
     private const val DB_PORT = 6334
     private val qdrantClient: QdrantClient by lazy {
         QdrantClient(
-            QdrantGrpcClient.newBuilder("localhost", 6334, false).build()
+            QdrantGrpcClient.newBuilder("localhost", DB_PORT, false).build()
         )
     }
 

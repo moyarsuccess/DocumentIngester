@@ -1,4 +1,4 @@
-package ca.flutra.ingest
+package ca.flutra.ingest.ocr
 
 import dev.langchain4j.data.image.Image
 import dev.langchain4j.data.message.ImageContent
@@ -11,7 +11,7 @@ import java.time.Duration
 import java.util.Base64
 import javax.imageio.ImageIO
 
-internal object OcrProviderImpl : OcrProvider {
+internal object OllamaOcrProvider : OcrProvider {
 
     private val ocrModel: OllamaChatModel by lazy {
         OllamaChatModel.OllamaChatModelBuilder()

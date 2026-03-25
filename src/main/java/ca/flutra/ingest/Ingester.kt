@@ -1,5 +1,7 @@
 package ca.flutra.ingest
 
+import ca.flutra.ingest.ocr.GoogleVisionOcrProvider
+import ca.flutra.ingest.ocr.OllamaOcrRefiner
 import kotlinx.coroutines.awaitAll
 
 object Ingester {
@@ -7,7 +9,7 @@ object Ingester {
     suspend fun startToIngest() {
         if (!EmbeddingStore.isEmpty()) return
         println("The db is empty, creating the knowledge base ...")
-        val fileLoader = IngestionFileLoader.newInstance(OcrProviderImpl, "md", "pdf")
+        val fileLoader = IngestionFileLoader.newInstance(GoogleVisionOcrProvider, OllamaOcrRefiner)
         fileLoader
             .load("knowledge-base")
             .map { IngestionChunker.chunk(it) }

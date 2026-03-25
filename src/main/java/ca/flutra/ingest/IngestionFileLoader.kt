@@ -1,5 +1,7 @@
 package ca.flutra.ingest
 
+import ca.flutra.ingest.ocr.OcrProvider
+import ca.flutra.ingest.ocr.OcrRefiner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -11,23 +13,53 @@ import org.apache.pdfbox.rendering.PDFRenderer
 import java.io.File
 
 class IngestionFileLoader private constructor(
-    private val fileTypeLoaders: Set<FileTypeLoader>,
+    private val ocrProvider: OcrProvider,
+    private val ocrRefiner: OcrRefiner,
 ) {
 
-    private val loadersMap: Map<FileType, FileTypeLoader> by lazy {
-        fileTypeLoaders.associateBy { it.supportedFileExtension }
-    }
+    private val pdfFileLoader = PdfFileLoader(ocrProvider = ocrProvider)
+    private val textBasedFileLoader = TextBasedFileLoader()
+    private val textBasedExtensions = setOf("txt", "md", "log")
 
     suspend fun load(baseDir: String): List<IngestionModel> = withContext(Dispatchers.IO) {
-        return@withContext File(baseDir)
+        val outputPath = "output"
+        val output = File(outputPath)
+        if (output.exists()) {
+            return@withContext output.walkTopDown()
+                .filter { it.isFile }
+                .map {
+                    IngestionModel(
+                        content = textBasedFileLoader.load(it),
+                        sourcePath = it.absolutePath,
+                    )
+                }
+                .toList()
+        }
+        if (!output.exists()) {
+            output.mkdir()
+        }
+        val models = File(baseDir)
             .walk(FileWalkDirection.TOP_DOWN)
             .mapNotNull { file ->
                 if (file.exists() && !file.isDirectory) {
                     async {
-                        IngestionModel(
-                            loadersMap[FileType.from(file.extension)]?.load(file) ?: "",
-                            file.absolutePath,
-                        )
+                        when {
+                            file.extension == "pdf" -> {
+                                IngestionModel(
+                                    pdfFileLoader.load(file),
+                                    file.absolutePath,
+                                )
+                            }
+
+                            textBasedExtensions.contains(file.extension) -> {
+                                IngestionModel(
+                                    textBasedFileLoader.load(file),
+                                    file.absolutePath,
+                                )
+                            }
+
+                            else -> null
+                        }
                     }
                 } else {
                     null
@@ -35,53 +67,34 @@ class IngestionFileLoader private constructor(
             }
             .toList()
             .awaitAll()
+            .filterNotNull()
+            .onEach { model ->
+                File(model.sourcePath).apply {
+                    File("$outputPath/$name.txt").writeText(model.content)
+                }
+            }
+        return@withContext ocrRefiner.refine(models)
     }
 
     companion object {
         @JvmStatic
-        fun newInstance(ocrProvider: OcrProvider, vararg fileTypeExtensions: String): IngestionFileLoader {
-            val loaders = fileTypeExtensions
-                .map { FileType.from(it) }
-                .map {
-                    when (it) {
-                        FileType.TEXT_BASED -> TextBasedFileLoader()
-                        FileType.PDF -> PdfFileLoader(ocrProvider)
-                    }
-                }
-                .toSet()
-            return IngestionFileLoader(fileTypeLoaders = loaders)
+        fun newInstance(
+            ocrProvider: OcrProvider,
+            ocrRefiner: OcrRefiner,
+        ): IngestionFileLoader {
+            return IngestionFileLoader(ocrRefiner = ocrRefiner, ocrProvider = ocrProvider)
         }
     }
 }
 
-enum class FileType(val extensions: Set<String>) {
-    TEXT_BASED(setOf("txt", "md", "log")),
-    PDF(setOf("pdf"));
-
-    companion object {
-        fun from(extension: String): FileType {
-            return entries.firstOrNull { it.extensions.contains(extension) } ?: TEXT_BASED
-        }
-    }
-}
-
-interface FileTypeLoader {
-    val supportedFileExtension: FileType
-
-    suspend fun load(file: File): String
-}
-
-class TextBasedFileLoader : FileTypeLoader {
-    override val supportedFileExtension = FileType.TEXT_BASED
-    override suspend fun load(file: File): String = file.readText()
+class TextBasedFileLoader {
+    fun load(file: File): String = file.readText()
 }
 
 class PdfFileLoader(
     private val ocrProvider: OcrProvider,
-) : FileTypeLoader {
-    override val supportedFileExtension = FileType.PDF
-
-    override suspend fun load(file: File): String {
+) {
+    suspend fun load(file: File): String {
         return imageToText(Loader.loadPDF(RandomAccessReadBufferedFile(file)))
     }
 

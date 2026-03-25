@@ -1,6 +1,6 @@
 package ca.flutra.new
 
-import ca.flutra.ingest.OcrProviderImpl
+import ca.flutra.ingest.ocr.OllamaOcrProvider
 import ca.flutra.ingest.PdfFileLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -11,7 +11,6 @@ import java.nio.file.Files
 import kotlin.io.path.extension
 import kotlin.io.path.isDirectory
 import kotlin.io.path.name
-import kotlin.io.path.readText
 
 object DocumentLoader {
 
@@ -26,7 +25,7 @@ object DocumentLoader {
                     Document(
                         type = docType,
                         source = file.toAbsolutePath().toString(),
-                        text = PdfFileLoader(OcrProviderImpl).load(File(file.toAbsolutePath().toString())),
+                        text = PdfFileLoader(OllamaOcrProvider).load(File(file.toAbsolutePath().toString())),
                     )
                 }
             }

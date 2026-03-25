@@ -1,4 +1,4 @@
-package ca.flutra.ingest
+package ca.flutra.ingest.ocr
 
 import java.awt.image.BufferedImage
 
