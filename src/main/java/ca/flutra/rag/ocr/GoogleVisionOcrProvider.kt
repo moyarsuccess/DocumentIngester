@@ -1,4 +1,4 @@
-package ca.flutra.ingest.ocr
+package ca.flutra.rag.ocr
 
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.cloud.vision.v1.*
@@ -11,7 +11,6 @@ import javax.imageio.ImageIO
 object GoogleVisionOcrProvider : OcrProvider {
 
     private val client: ImageAnnotatorClient by lazy {
-        // ── Load from explicit credentials file path ──────────────────
         val credentials = GoogleCredentials
             .fromStream(FileInputStream("google-credentials.json"))
             .createScoped(listOf("https://www.googleapis.com/auth/cloud-platform"))

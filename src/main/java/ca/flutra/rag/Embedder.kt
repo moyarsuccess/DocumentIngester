@@ -1,4 +1,4 @@
-package ca.flutra.new
+package ca.flutra.rag
 
 import dev.langchain4j.data.document.Metadata
 import dev.langchain4j.data.embedding.Embedding

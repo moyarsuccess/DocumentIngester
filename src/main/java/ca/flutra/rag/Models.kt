@@ -1,4 +1,4 @@
-package ca.flutra.new
+package ca.flutra.rag
 
 import com.google.gson.annotations.SerializedName
 

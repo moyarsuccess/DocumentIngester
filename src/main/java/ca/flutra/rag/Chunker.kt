@@ -1,4 +1,4 @@
-package ca.flutra.new
+package ca.flutra.rag
 
 import com.google.gson.Gson
 import dev.langchain4j.data.message.UserMessage
@@ -12,11 +12,14 @@ import dev.langchain4j.model.chat.request.json.JsonStringSchema
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 
 object Chunker {
 
     private val gson = Gson()
+    private val semaphore = Semaphore(Config.INGESTION_PARALLELISM)
 
     private val responseFormat: ResponseFormat by lazy {
         val chunkSchema = JsonObjectSchema.builder()
@@ -32,7 +35,7 @@ object Chunker {
             )
             .addProperty(
                 "original_text", JsonStringSchema.builder()
-                    .description("The original text of this chunk, exactly as-is")
+                    .description("The verbatim text from the document for this chunk. Copy the source text character-for-character — do NOT paraphrase, summarize, or alter it in any way.")
                     .build()
             )
             .required(listOf("headline", "summary", "original_text"))
@@ -64,7 +67,7 @@ object Chunker {
      * Processes a single document into chunks via the LLM.
      * Equivalent of Python's process_document().
      */
-    fun processDocument(document: Document): List<Result> {
+    private fun processDocument(document: Document): List<Result> {
         val request = ChatRequest.builder()
             .messages(listOf(UserMessage.from(makePrompt(document))))
             .responseFormat(responseFormat)
@@ -81,7 +84,7 @@ object Chunker {
     suspend fun createChunks(documents: List<Document>): List<Result> =
         withContext(Dispatchers.IO) {
             documents
-                .map { doc -> async { processDocument(doc) } }
+                .map { doc -> async { semaphore.withPermit { processDocument(doc) } } }
                 .awaitAll()
                 .flatten()
         }
@@ -98,8 +101,11 @@ object Chunker {
             This document should probably be split into at least $howMany chunks, but you can have more or less as appropriate.
             There should be overlap between the chunks as appropriate; typically about ${Config.AVERAGE_OVERLAP_PERCENT}% overlap, so you have the same text in multiple chunks for best retrieval results.
 
-            For each chunk, provide a headline, a summary, and the original text of the chunk.
-            Together your chunks should represent the entire document with overlap.
+            For each chunk, provide:
+            - headline: a brief heading for the chunk
+            - summary: a few sentences summarising its content
+            - original_text: the VERBATIM text from the document for this chunk. Copy it character-for-character exactly as it appears in the source — do not paraphrase, condense, or change a single word.
+            Together your chunks must cover the entire document with overlap; no content should be omitted.
 
             Here is the document:
 

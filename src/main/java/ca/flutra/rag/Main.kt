@@ -1,4 +1,4 @@
-package ca.flutra.new
+package ca.flutra.rag
 
 fun main() {
     println("=== RAG Assistant Ready ===")

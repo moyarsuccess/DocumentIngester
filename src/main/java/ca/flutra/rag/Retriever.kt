@@ -1,4 +1,4 @@
-package ca.flutra.new
+package ca.flutra.rag
 
 import dev.langchain4j.data.segment.TextSegment
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest

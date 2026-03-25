@@ -1,4 +1,4 @@
-package ca.flutra.new
+package ca.flutra.rag
 
 import com.google.gson.Gson
 import dev.langchain4j.data.message.SystemMessage
@@ -73,6 +73,15 @@ object Reranker {
 
         val reply = ModelProvider.chatModel.chat(request).aiMessage().text()
         val order = gson.fromJson(reply, RankOrder::class.java).order
-        return order.map { chunks[it - 1] }
+
+        // Guard against out-of-range or duplicate indices returned by the LLM.
+        val validOrder = order
+            .filter { it >= 1 && it <= chunks.size }
+            .distinct()
+
+        // Fall back to original order if the LLM returned nothing usable.
+        if (validOrder.isEmpty()) return chunks
+
+        return validOrder.map { chunks[it - 1] }
     }
 }

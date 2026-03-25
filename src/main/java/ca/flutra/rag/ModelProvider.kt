@@ -1,4 +1,4 @@
-package ca.flutra.new
+package ca.flutra.rag
 
 import dev.langchain4j.model.chat.ChatModel
 import dev.langchain4j.model.embedding.EmbeddingModel

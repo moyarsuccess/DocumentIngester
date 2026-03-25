@@ -1,5 +1,6 @@
-package ca.flutra.new
+package ca.flutra.rag
 
+import dev.langchain4j.data.message.AiMessage
 import dev.langchain4j.data.message.ChatMessage
 import dev.langchain4j.data.message.SystemMessage
 import dev.langchain4j.data.message.UserMessage
@@ -36,9 +37,15 @@ object AnswerService {
         question: String,
         history: List<ChatMessage> = emptyList(),
     ): Pair<String, List<Result>> {
-        // 1. Retrieve and merge chunks (original + rewritten query)
-        val historyAsMaps = history.filterIsInstance<UserMessage>()
-            .map { mapOf("role" to "user", "content" to it.singleText()) }
+        // 1. Retrieve and merge chunks (original + rewritten query).
+        // Include both user and AI turns so the query rewriter has full conversation context.
+        val historyAsMaps = history.mapNotNull { message ->
+            when (message) {
+                is UserMessage -> mapOf("role" to "user", "content" to message.singleText())
+                is AiMessage  -> mapOf("role" to "assistant", "content" to message.text())
+                else          -> null
+            }
+        }
 
         val candidates = Retriever.fetchContext(question, historyAsMaps)
 

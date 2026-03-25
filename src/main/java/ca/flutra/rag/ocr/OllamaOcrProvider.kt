@@ -1,5 +1,6 @@
-package ca.flutra.ingest.ocr
+package ca.flutra.rag.ocr
 
+import ca.flutra.rag.Config
 import dev.langchain4j.data.image.Image
 import dev.langchain4j.data.message.ImageContent
 import dev.langchain4j.data.message.TextContent
@@ -15,13 +16,12 @@ internal object OllamaOcrProvider : OcrProvider {
 
     private val ocrModel: OllamaChatModel by lazy {
         OllamaChatModel.OllamaChatModelBuilder()
-            .baseUrl("http://localhost:11434")
+            .baseUrl(Config.OLLAMA_BASE_URL)
             .temperature(0.0)
-            .modelName("qwen2.5vl:7b")
+            .modelName(Config.OCR_MODEL_NAME)
             .timeout(Duration.ofMinutes(5))
             .build()
             ?: throw IllegalStateException("Failed to provide the model!")
-
     }
 
     override fun imageToText(image: BufferedImage): String {
@@ -42,7 +42,11 @@ internal object OllamaOcrProvider : OcrProvider {
             .build()
 
         val userMessage = UserMessage.from(
-            TextContent.from("Describe this image"),
+            TextContent.from(
+                "You are an OCR engine. Extract all text from this document page image exactly as it appears. " +
+                "Preserve the original layout, line breaks, and formatting as closely as possible. " +
+                "Output only the raw extracted text — do not describe, summarise, or add any commentary."
+            ),
             ImageContent.from(ocrImage)
         )
         return ocrModel.chat(userMessage)?.aiMessage()?.text() ?: ""

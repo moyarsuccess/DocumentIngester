@@ -1,4 +1,4 @@
-package ca.flutra.new
+package ca.flutra.rag
 
 import dev.langchain4j.store.embedding.qdrant.QdrantEmbeddingStore
 import io.qdrant.client.QdrantClient
@@ -9,7 +9,7 @@ object EmbeddingStoreProvider {
 
     private val qdrantClient: QdrantClient by lazy {
         QdrantClient(
-            QdrantGrpcClient.newBuilder("localhost", 6334, false).build()
+            QdrantGrpcClient.newBuilder(Config.QDRANT_HOST, Config.QDRANT_PORT, false).build()
         )
     }
 
@@ -27,11 +27,11 @@ object EmbeddingStoreProvider {
         qdrantClient.createCollectionAsync(
             Config.COLLECTION_NAME,
             Collections.VectorParams.newBuilder()
-                .setSize(1024)
+                .setSize(Config.EMBEDDING_DIMENSIONS.toLong())
                 .setDistance(Collections.Distance.Cosine)
                 .build()
         ).get()
-        println("Created Qdrant collection '${Config.COLLECTION_NAME}' with 1024 dimensions")
+        println("Created Qdrant collection '${Config.COLLECTION_NAME}' with ${Config.EMBEDDING_DIMENSIONS} dimensions")
     }
 
     private fun QdrantClient.collectionExists(collectionName: String): Boolean =
