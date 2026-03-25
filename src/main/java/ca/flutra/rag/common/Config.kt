@@ -1,9 +1,9 @@
-package ca.flutra.rag
+package ca.flutra.rag.common
 
 import java.nio.file.Path
 import java.nio.file.Paths
 
-object Config {
+internal object Config {
 
     val knowledgeBasePath: Path = Paths
         .get(System.getenv("KNOWLEDGE_BASE_PATH") ?: "knowledge-base")

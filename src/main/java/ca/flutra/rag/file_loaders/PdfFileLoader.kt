@@ -1,4 +1,4 @@
-package ca.flutra.rag
+package ca.flutra.rag.file_loaders
 
 import ca.flutra.rag.ocr.OcrProvider
 import kotlinx.coroutines.Dispatchers
@@ -11,9 +11,8 @@ import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.rendering.PDFRenderer
 import java.io.File
 
-class PdfFileLoader(
-    private val ocrProvider: OcrProvider,
-) {
+internal object PdfFileLoader {
+
     suspend fun load(file: File): String {
         return imageToText(Loader.loadPDF(RandomAccessReadBufferedFile(file)))
     }
@@ -28,7 +27,7 @@ class PdfFileLoader(
                     }
                     .map { image ->
                         async {
-                            val text = ocrProvider.imageToText(image)
+                            val text = OcrProvider.instance.imageToText(image)
                             println("Page content size is ${text.length} chars")
                             text
                         }

@@ -1,6 +1,6 @@
 package ca.flutra.rag.ocr
 
-import ca.flutra.rag.Config
+import ca.flutra.rag.common.Config
 import dev.langchain4j.data.image.Image
 import dev.langchain4j.data.message.ImageContent
 import dev.langchain4j.data.message.TextContent

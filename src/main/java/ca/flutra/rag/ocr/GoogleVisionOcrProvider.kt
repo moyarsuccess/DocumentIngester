@@ -8,7 +8,7 @@ import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
 import javax.imageio.ImageIO
 
-object GoogleVisionOcrProvider : OcrProvider {
+internal object GoogleVisionOcrProvider : OcrProvider {
 
     private val client: ImageAnnotatorClient by lazy {
         val credentials = GoogleCredentials

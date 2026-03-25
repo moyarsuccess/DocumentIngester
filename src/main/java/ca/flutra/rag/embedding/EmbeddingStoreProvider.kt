@@ -1,11 +1,12 @@
-package ca.flutra.rag
+package ca.flutra.rag.embedding
 
+import ca.flutra.rag.common.Config
 import dev.langchain4j.store.embedding.qdrant.QdrantEmbeddingStore
 import io.qdrant.client.QdrantClient
 import io.qdrant.client.QdrantGrpcClient
 import io.qdrant.client.grpc.Collections
 
-object EmbeddingStoreProvider {
+internal object EmbeddingStoreProvider {
 
     private val qdrantClient: QdrantClient by lazy {
         QdrantClient(

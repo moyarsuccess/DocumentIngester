@@ -1,6 +1,6 @@
-package ca.flutra.rag
+package ca.flutra.rag.common
 
-data class Document(
+internal data class Document(
     val type: String,
     val source: String,
     val text: String,

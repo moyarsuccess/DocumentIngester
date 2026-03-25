@@ -1,4 +1,4 @@
-package ca.flutra.rag
+package ca.flutra.rag.common
 
 import dev.langchain4j.model.chat.ChatModel
 import dev.langchain4j.model.embedding.EmbeddingModel
@@ -6,7 +6,7 @@ import dev.langchain4j.model.ollama.OllamaChatModel
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel
 import java.time.Duration
 
-object ModelProvider {
+internal object ModelProvider {
 
     val chatModel: ChatModel by lazy {
         OllamaChatModel.builder()
