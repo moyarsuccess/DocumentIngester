@@ -32,6 +32,9 @@ dependencies {
 
     // Tesseract OCR (local, no cloud, no LLM)
     implementation("net.sourceforge.tess4j:tess4j:5.13.0")
+
+    // JSON serialization — used by the eval suite for dataset save/load
+    implementation("com.google.code.gson:gson:2.13.2")
 }
 
 tasks.test {

@@ -3,6 +3,7 @@ package ca.flutra.rag
 import ca.flutra.rag.common.Config
 import ca.flutra.rag.common.ModelProvider
 import ca.flutra.rag.embedding.EmbeddingStoreProvider
+import ca.flutra.rag.eval.DocumentTextStore
 import ca.flutra.rag.file_loaders.DocumentLoader
 import dev.langchain4j.data.document.Metadata
 import dev.langchain4j.data.document.splitter.DocumentSplitters
@@ -55,7 +56,10 @@ fun main() = runBlocking {
     ingestor.ingest(lc4jDocs)
     println("Ingested and stored all chunks.")
 
-    // 4. Record newly ingested paths so future runs skip them.
+    // 4. Cache raw document texts for the eval suite so it never needs to re-run OCR.
+    DocumentTextStore.save(documents)
+
+    // 5. Record newly ingested paths so future runs skip them.
     appendToManifest(documents.map { it.source })
 
     println("=== Ingestion complete ===")
