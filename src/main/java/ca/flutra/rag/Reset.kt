@@ -8,7 +8,6 @@ import java.io.File
 /**
  * Wipes everything so you can start fresh:
  *  - Drops the Qdrant vector collection
- *  - Deletes .ingestion-manifest.txt
  *  - Deletes ingested-texts.json
  *  - Deletes eval-dataset.json
  *
@@ -20,7 +19,7 @@ fun main() {
     // 1. Drop the Qdrant collection
     try {
         val client = QdrantClient(
-            QdrantGrpcClient.newBuilder(Config.QDRANT_HOST, Config.QDRANT_PORT, false).build()
+            QdrantGrpcClient.newBuilder(Config.QDRANT_HOST, Config.QDRANT_GRPC_PORT, false).build()
         )
         val collections = client.listCollectionsAsync().get()
         if (Config.COLLECTION_NAME in collections) {
@@ -36,7 +35,6 @@ fun main() {
 
     // 2. Delete local state files
     listOf(
-        File(".ingestion-manifest.txt"),
         File("ingested-texts.json"),
         File("eval-dataset.json"),
     ).forEach { file ->

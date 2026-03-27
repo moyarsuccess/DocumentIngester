@@ -44,7 +44,12 @@ kotlin {
     jvmToolchain(21)
 }
 tasks.withType<JavaExec> {
-    jvmArgs("-Dorg.apache.lucene.store.MMapDirectory.enableMemorySegments=false")
+    jvmArgs(
+        "-Dorg.apache.lucene.store.MMapDirectory.enableMemorySegments=false",
+        // Tell JNA where Homebrew installs native libs on Apple Silicon.
+        // Without this, JNA only searches JVM dirs and system paths, missing /opt/homebrew/lib.
+        "-Djna.library.path=/opt/homebrew/lib",
+    )
 }
 
 // Force all grpc modules to the same version

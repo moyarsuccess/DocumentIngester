@@ -20,7 +20,7 @@ import dev.langchain4j.service.SystemMessage
  *    from the raw source metadata without the LLM touching the ranking.
  *
  * 2. **Full pipeline call** — sends the question through [EvalAssistant] (same
- *    AiServices setup as Main.kt) to get the actual answer and the context
+ *    AiServices setup as Answer.kt) to get the actual answer and the context
  *    string used to feed [LlmJudge].
  */
 object EvalRunner {
@@ -103,7 +103,7 @@ object EvalRunner {
         )
     }
 
-    // ── Assistant interface (mirrors Main.kt) ─────────────────────────────────
+    // ── Assistant interface (mirrors Answer.kt) ─────────────────────────────────
 
     private interface EvalAssistant {
         @SystemMessage(

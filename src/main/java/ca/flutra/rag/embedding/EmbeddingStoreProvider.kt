@@ -10,7 +10,7 @@ internal object EmbeddingStoreProvider {
 
     private val qdrantClient: QdrantClient by lazy {
         QdrantClient(
-            QdrantGrpcClient.newBuilder(Config.QDRANT_HOST, Config.QDRANT_PORT, false).build()
+            QdrantGrpcClient.newBuilder(Config.QDRANT_HOST, Config.QDRANT_GRPC_PORT, false).build()
         )
     }
 
@@ -18,7 +18,7 @@ internal object EmbeddingStoreProvider {
         ensureCollectionExistsWithCorrectDimensions()
         QdrantEmbeddingStore.builder()
             .host(Config.QDRANT_HOST)
-            .port(Config.QDRANT_PORT)
+            .port(Config.QDRANT_GRPC_PORT)
             .collectionName(Config.COLLECTION_NAME)
             .build()
     }
@@ -58,6 +58,17 @@ internal object EmbeddingStoreProvider {
                 .build()
         ).get()
         println("Created Qdrant collection '${Config.COLLECTION_NAME}' with ${Config.EMBEDDING_DIMENSIONS} dimensions")
+    }
+
+    /**
+     * Drops the Qdrant collection so it can be recreated on the next [store] access.
+     * Call this before re-ingesting with a new chunk config.
+     */
+    fun resetCollection() {
+        if (qdrantClient.collectionExists(Config.COLLECTION_NAME)) {
+            qdrantClient.deleteCollectionAsync(Config.COLLECTION_NAME).get()
+            println("Dropped Qdrant collection '${Config.COLLECTION_NAME}' — will recreate on next ingest.")
+        }
     }
 
     private fun QdrantClient.collectionExists(collectionName: String): Boolean =

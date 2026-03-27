@@ -1,4 +1,11 @@
-package ca.flutra.rag.eval
+package ca.flutra.rag
+
+import ca.flutra.rag.eval.DatasetGenerator
+import ca.flutra.rag.eval.DocumentTextStore
+import ca.flutra.rag.eval.EvalMetrics
+import ca.flutra.rag.eval.EvalResult
+import ca.flutra.rag.eval.EvalRunner
+import ca.flutra.rag.eval.Metrics
 
 /**
  * Entry point for the RAG evaluation suite.
